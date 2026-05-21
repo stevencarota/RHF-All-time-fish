@@ -1,0 +1,445 @@
+
+<h2 class="sr-only">Fishing tournament dashboard showing catch data by angler, species, year, and fish size from 2023 to 2026.</h2>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --water: #1a6b8a;
+    --water-light: #e8f4f8;
+    --water-mid: #4a9ab8;
+    --water-dark: #0d4a62;
+    --amber: #e8943a;
+    --amber-light: #fdf2e6;
+    --green: #3a8c5c;
+    --green-light: #eaf3ee;
+    --coral: #d85a30;
+    --coral-light: #faeae4;
+    --bg: #f5f7f9;
+    --card: #ffffff;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a1f2e;
+    --muted: #6b7280;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111827;
+      --card: #1f2937;
+      --border: rgba(255,255,255,0.08);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --water-light: #0d3040;
+      --amber-light: #2d1a07;
+      --green-light: #0f2a1a;
+      --coral-light: #2d1008;
+    }
+  }
+
+  body, .dash-root { background: var(--bg); font-family: var(--font-body); color: var(--text); }
+  .dash-root { padding: 0 0 2rem; }
+
+  .dash-header {
+    background: var(--water-dark);
+    padding: 1.25rem 1.5rem 1rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .dash-title { font-family: var(--font-display); font-size: 22px; color: #fff; line-height: 1.1; }
+  .dash-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; font-family: var(--font-mono); letter-spacing: 0.05em; }
+
+  .filter-bar {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 0 1.5rem 1rem;
+  }
+  .filter-bar label { font-size: 12px; color: var(--muted); font-family: var(--font-mono); margin-right: 2px; }
+  .filter-bar select {
+    font-size: 13px; padding: 5px 10px; border-radius: 6px;
+    border: 0.5px solid var(--border); background: var(--card);
+    color: var(--text); font-family: var(--font-body); cursor: pointer;
+  }
+  .filter-bar .pill-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pill {
+    font-size: 12px; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--muted); cursor: pointer; font-family: var(--font-mono);
+    transition: all 0.15s;
+  }
+  .pill.active { background: var(--water); color: #fff; border-color: var(--water); }
+  .pill:hover:not(.active) { border-color: var(--water); color: var(--water); }
+
+  .metrics-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px; padding: 0 1.5rem 1rem;
+  }
+  .metric-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 0.875rem 1rem;
+    border-top: 3px solid transparent;
+  }
+  .metric-card.blue { border-top-color: var(--water); }
+  .metric-card.amber { border-top-color: var(--amber); }
+  .metric-card.green { border-top-color: var(--green); }
+  .metric-card.coral { border-top-color: var(--coral); }
+  .metric-label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .metric-value { font-size: 26px; font-weight: 700; font-family: var(--font-display); line-height: 1.1; }
+  .metric-card.blue .metric-value { color: var(--water); }
+  .metric-card.amber .metric-value { color: var(--amber); }
+  .metric-card.green .metric-value { color: var(--green); }
+  .metric-card.coral .metric-value { color: var(--coral); }
+  .metric-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .charts-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; padding: 0 1.5rem 10px;
+  }
+  .charts-row-3 {
+    display: grid; grid-template-columns: 2fr 1fr;
+    gap: 10px; padding: 0 1.5rem 10px;
+  }
+  .chart-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.25rem;
+  }
+  .chart-title {
+    font-size: 13px; font-weight: 500; color: var(--text);
+    margin-bottom: 0.75rem; font-family: var(--font-mono);
+    letter-spacing: 0.03em; display: flex; justify-content: space-between; align-items: center;
+  }
+  .chart-title span { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; flex-wrap: wrap; }
+  .slider-row label { font-size: 11px; color: var(--muted); font-family: var(--font-mono); white-space: nowrap; }
+  .slider-row input[type=range] { flex: 1; min-width: 80px; }
+  .slider-val { font-size: 12px; font-weight: 500; color: var(--water); font-family: var(--font-mono); min-width: 36px; }
+
+  .leaderboard { width: 100%; border-collapse: collapse; }
+  .leaderboard th { font-size: 11px; color: var(--muted); font-family: var(--font-mono); text-align: left; padding: 4px 8px 8px; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--border); }
+  .leaderboard td { font-size: 13px; padding: 6px 8px; border-bottom: 0.5px solid var(--border); }
+  .leaderboard tr:last-child td { border-bottom: none; }
+  .rank-badge { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; font-family: var(--font-mono); }
+  .rank-1 { background: #fef3c7; color: #b45309; }
+  .rank-2 { background: #f1f5f9; color: #475569; }
+  .rank-3 { background: #fef2ee; color: #c2410c; }
+  .rank-n { background: var(--bg); color: var(--muted); }
+
+  .bar-h-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .bar-h-row { display: flex; align-items: center; gap: 8px; }
+  .bar-h-label { font-size: 12px; color: var(--muted); font-family: var(--font-mono); width: 52px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-h-track { flex: 1; height: 16px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .bar-h-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .bar-h-val { font-size: 11px; font-family: var(--font-mono); color: var(--muted); width: 28px; }
+
+  .species-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .species-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+  .section-pad { padding: 0 1.5rem 10px; }
+  .section-label { font-size: 11px; font-family: var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+</style>
+
+<div class="dash-root">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">🎣 Fishing Log Dashboard</div>
+      <div class="dash-subtitle">Catch records · 2023–2026 · All anglers</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px; color:rgba(255,255,255,0.5); font-family:var(--font-mono);">Total entries</div>
+      <div style="font-size:22px; font-family:var(--font-display); color:#fff;" id="hdr-total">—</div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <label>YEAR</label>
+    <div class="pill-group" id="year-pills"></div>
+    <label style="margin-left:8px">SPECIES</label>
+    <div class="pill-group" id="species-pills"></div>
+    <label style="margin-left:8px">ANGLER</label>
+    <select id="angler-select"><option value="all">All anglers</option></select>
+  </div>
+
+  <div class="metrics-row" id="metrics-row"></div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Catches by angler <span id="by-angler-sub"></span></div>
+      <div class="bar-h-wrap" id="angler-bars"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Species breakdown <span id="species-sub"></span></div>
+      <div class="species-legend" id="species-legend"></div>
+      <div style="position:relative; height:180px;"><canvas id="speciesChart" role="img" aria-label="Doughnut chart of catch counts by species">Species breakdown.</canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row-3">
+    <div class="chart-card">
+      <div class="chart-title">Size distribution <span id="size-sub"></span></div>
+      <div class="slider-row">
+        <label>Min length</label>
+        <input type="range" id="min-len" min="0" max="80" value="0" step="1">
+        <span class="slider-val" id="min-len-val">0 cm</span>
+        <label>Max length</label>
+        <input type="range" id="max-len" min="0" max="80" value="80" step="1">
+        <span class="slider-val" id="max-len-val">80 cm</span>
+      </div>
+      <div style="position:relative; height:180px;"><canvas id="histChart" role="img" aria-label="Histogram of fish lengths in centimeters">Length histogram.</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Year-over-year <span></span></div>
+      <div style="position:relative; height:210px;"><canvas id="yoyChart" role="img" aria-label="Bar chart of total catches per year">Year over year catch count.</canvas></div>
+    </div>
+  </div>
+
+  <div class="section-pad">
+    <div class="chart-card">
+      <div class="chart-title">Biggest fish leaderboard <span id="lb-sub"></span></div>
+      <table class="leaderboard" id="leaderboard"></table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const RAW = [
+  [2025,"Jon","Walleye",63],[2025,"Joey","Walleye",34],[2025,"Tim","Walleye",49],[2025,"Rob","Walleye",49],[2025,"Joey","Pike",50],[2025,"Joey","Walleye",31],[2025,"Rob","Walleye",50],[2025,"Joey","Bass",34],[2025,"Rob","Pike",45],[2025,"Joey","Walleye",43],[2025,"Ryan","Walleye",53],[2025,"Rob","Walleye",31],[2025,"Mauro","Pike",39],[2025,"Tim","Pike",42],[2025,"Ryan","Walleye",54],[2025,"Joey","Pike",42],[2025,"Steve","Walleye",36],[2025,"Joey","Walleye",42],[2025,"Jon","Pike",44],[2025,"Justin","Walleye",31],[2025,"Steve","Pike",54],[2025,"Shawn","Walleye",47],[2025,"Steve","Walleye",38],[2025,"Roy","Pike",49],[2025,"Ryan","Walleye",38],[2025,"Mauro","Walleye",40],[2025,"Steve","Walleye",38],[2025,"Tim","Walleye",45],[2025,"Steve","Pike",58],[2025,"Justin","Walleye",38],[2025,"Joey","Walleye",41],[2025,"Tim","Pike",53],[2025,"Justin","Walleye",38],[2025,"Steve","Pike",50],[2025,"Jon","Pike",53],[2025,"Tim","Walleye",53],[2025,"Justin","Walleye",33],[2025,"Joey","Walleye",28],[2025,"Jon","Walleye",38],[2025,"Justin","Walleye",33],[2025,"Tim","Walleye",38],[2025,"Steve","Walleye",41],[2025,"Jon","Walleye",37],[2025,"Justin","Walleye",54],[2025,"Joey","Walleye",40],[2025,"Justin","Walleye",44],[2025,"Joey","Walleye",51],[2025,"Steve","Pike",53],[2025,"Shawn","Walleye",44],[2025,"Justin","Walleye",43],[2025,"Justin","Walleye",54],[2025,"Steve","Walleye",45],[2025,"Justin","Walleye",41],[2025,"Jon","Walleye",38],[2025,"Justin","Walleye",36],[2025,"Steve","Walleye",58],[2025,"Justin","Walleye",38],[2025,"Tim","Walleye",38],[2025,"Justin","Pike",43],[2025,"Steve","Walleye",57],[2025,"Jon","Pike",54],[2025,"Justin","Walleye",29],[2025,"Rob","Walleye",37],[2025,"Rob","Walleye",46],[2025,"Shawn","Walleye",39],
+  [2026,"Justin","Walleye",44],[2026,"Justin","Walleye",42],[2026,"Joey","Walleye",29],[2026,"Steve","Walleye",41],[2026,"Justin","Walleye",29],[2026,"Joey","Walleye",30],[2026,"Steve","Walleye",41],[2026,"Steve","Bass",34],[2026,"Steve","Pike",45],[2026,"Jonathan","Pike",48],[2026,"Jonathan","Pike",49],[2026,"Steve","Walleye",49],[2026,"Rob","Walleye",38],[2026,"James","Pike",49],[2026,"Steve","Pike",37],[2026,"James","Walleye",37],[2026,"Joey","Walleye",40],[2026,"Joey","Walleye",43],[2026,"Justin","Walleye",47.5],[2026,"Steve","Walleye",48.5],[2026,"Shawn","Walleye",37],[2026,"Ryan","Walleye",50],[2026,"Justin","Walleye",49.5],[2026,"Jonathan","Walleye",38],[2026,"Justin","Pike",34],[2026,"Justin","Walleye",28],[2026,"Shawn","Pike",48],[2026,"Justin","Walleye",40],[2026,"Shawn","Pike",44],[2026,"Justin","Pike",32],[2026,"James","Pike",48],[2026,"Jonathan","Pike",70],[2026,"Justin","Walleye",43],[2026,"Joey","Walleye",41],[2026,"Steve","Walleye",38],[2026,"Jonathan","Walleye",42],[2026,"Rob","Pike",41],[2026,"Steve","Walleye",48.5],[2026,"Joey","Walleye",39],[2026,"Joey","Walleye",62],[2026,"Joey","Walleye",9],[2026,"Ryan","Walleye",42],[2026,"Wayne","Pike",46],[2026,"Ryan","Pike",54],[2026,"Rob","Bass",45],[2026,"Wayne","Walleye",41],[2026,"Shawn","Walleye",9],[2026,"Joey","Walleye",40],[2026,"Jonathan","Walleye",36],[2026,"Justin","Walleye",31],[2026,"Justin","Walleye",49],[2026,"Rob","Walleye",38],[2026,"Rob","Walleye",40],[2026,"Justin","Walleye",51],[2026,"Adam","Walleye",50],[2026,"Rob","Pike",49],[2026,"Adam","Walleye",40],[2026,"Justin","Walleye",43],[2026,"Steve","Pike",40],[2026,"Steve","Walleye",60],[2026,"Adam","Walleye",38],[2026,"Adam","Pike",42],[2026,"Rob","Pike",30],[2026,"Shawn","Pike",48],[2026,"Justin","Walleye",51],[2026,"Steve","Pike",38],[2026,"Wayne","Walleye",41],[2026,"James","Walleye",37],[2026,"Jonathan","Walleye",42],[2026,"Steve","Pike",50],[2026,"Wayne","Pike",54],[2026,"Steve","Pike",30],[2026,"Steve","Walleye",36.5],[2026,"Justin","Walleye",49.5],[2026,"Justin","Pike",59],[2026,"Steve","Walleye",42],[2026,"Justin","Walleye",36.5],[2026,"Shawn","Walleye",30],[2026,"Jonathan","Walleye",39],[2026,"Justin","Walleye",33],[2026,"Justin","Walleye",59],
+  [2024,"Joe Fisc","Walleye",38],[2024,"Joey","Walleye",48],[2024,"Steve","Walleye",49],[2024,"Mauro","Walleye",40],[2024,"Ryan","Pike",45],[2024,"Joey","Walleye",47],[2024,"Shawn","Pike",45],[2024,"Jon","Pike",45],[2024,"Steve","Pike",45],[2024,"Mike","Pike",45],[2024,"Shawn","Pike",45],[2024,"Shawn","Pike",45],[2024,"Steve","Pike",45],[2024,"Mike","Pike",45],[2024,"Jon","Walleye",38],[2024,"Ryan","Pike",45],[2024,"Tim","Pike",45],[2024,"Justin","Walleye",38],[2024,"Justin","Walleye",38],[2024,"Justin","Pike",45],[2024,"Justin","Pike",45],[2024,"Mauro","Pike",45],[2024,"Jon","Pike",45],[2024,"Rob","Pike",45],[2024,"Joe Fisc","Pike",45],[2024,"Jon","Pike",45],[2024,"Justin","Pike",45],[2024,"Joey","Pike",45],[2024,"Joey","Pike",45],[2024,"Steve","Pike",45],[2024,"Joe Fisc","Pike",45],[2024,"Joey","Pike",45],[2024,"Adam","Pike",45],[2024,"Mike","Pike",45],[2024,"Frank","Pike",45],[2024,"Steve","Pike",45],[2024,"Joey","Pike",45],[2024,"Ryan","Pike",45],[2024,"Joey","Pike",45],[2024,"Adam","Pike",45],[2024,"Tim","Pike",45],[2024,"Tim","Pike",45],[2024,"Steve","Pike",45],[2024,"Justin","Pike",45],[2024,"Steve","Pike",45],[2024,"Steve","Pike",45],[2024,"Shawn","Pike",45],[2024,"Joey","Walleye",38],[2024,"Jon","Pike",45],[2024,"Joe Fisc","Pike",45],[2024,"Steve","Walleye",42],[2024,"Steve","Walleye",38],[2024,"Justin","Walleye",42],
+  [2023,"Steve","Walleye",52],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",42.5],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Walleye",38],[2023,"Steve","Pike",45],[2023,"Steve","Pike",45],[2023,"Steve","Pike",45],[2023,"Steve","Smallmouth Bass",40],[2023,"Jon","Pike",45],[2023,"Jon","Pike",45],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",42.5],[2023,"Jon","Walleye",59],[2023,"Jon","Walleye",38],[2023,"Jon","Walleye",38],[2023,"Jon","Walleye",38],[2023,"Justin","Pike",45],[2023,"Justin","Walleye",42.5],[2023,"Justin","Walleye",42.5],[2023,"Justin","Walleye",42.5],[2023,"Justin","Walleye",38],[2023,"Justin","Walleye",38],[2023,"Justin","Walleye",38],[2023,"Justin","Walleye",38],[2023,"Justin","Walleye",38],[2023,"Justin","Walleye",38],[2023,"Rob","Pike",45],[2023,"Rob","Pike",45],[2023,"Rob","Pike",45],[2023,"Rob","Walleye",42.5],[2023,"Rob","Walleye",42.5],[2023,"Rob","Walleye",42.5],[2023,"Rob","Walleye",42.5],[2023,"Rob","Walleye",38],[2023,"Rob","Walleye",38],[2023,"Rob","Walleye",38],[2023,"Joe Fisc","Pike",45],[2023,"Joe Fisc","Pike",45],[2023,"Joe Fisc","Pike",45],[2023,"Joe Fisc","Pike",45],[2023,"Joe Fisc","Smallmouth Bass",40],[2023,"Joe Fisc","Walleye",45],[2023,"Joe Fisc","Walleye",42.5],[2023,"Joe Fisc","Walleye",42.5],[2023,"Joe Fisc","Walleye",42.5],[2023,"Joe Fisc","Walleye",42.5],[2023,"Joe Fisc","Walleye",42.5],[2023,"Joe Fisc","Walleye",42.5],[2023,"Ryan","Pike",45],[2023,"Ryan","Pike",45],[2023,"Ryan","Pike",45],[2023,"Ryan","Pike",45],[2023,"Ryan","Pike",45],[2023,"Ryan","Walleye",42.5],[2023,"Ryan","Walleye",42.5],[2023,"Ryan","Walleye",42.5],[2023,"Ryan","Walleye",38],[2023,"Ryan","Walleye",38],[2023,"Ryan","Walleye",38],[2023,"Shawn","Walleye",45],[2023,"Shawn","Walleye",42.5],[2023,"Shawn","Walleye",42.5],[2023,"Shawn","Walleye",42.5],[2023,"Joey","Pike",45],[2023,"Joey","Pike",45],[2023,"Joey","Pike",45],[2023,"Joey","Pike",45],[2023,"Joey","Pike",45],[2023,"Joey","Walleye",38],[2023,"Mauro","Walleye",45],[2023,"Frank","Pike",45]
+];
+
+const SPECIES_COLORS = {
+  "Walleye": "#1a6b8a",
+  "Pike": "#e8943a",
+  "Bass": "#3a8c5c",
+  "Smallmouth Bass": "#3a8c5c",
+};
+const SPECIES_NORM = s => (s === "Smallmouth Bass" || s === "Bass") ? "Bass" : s;
+
+const data = RAW.map(r => ({ year: r[0], angler: r[1], species: SPECIES_NORM(r[2]), length: r[3] }));
+
+const years = [...new Set(data.map(d => d.year))].sort();
+const species = [...new Set(data.map(d => d.species))].sort();
+const anglers = [...new Set(data.map(d => d.angler))].sort();
+
+let selYears = new Set(years.map(String));
+let selSpecies = new Set(species);
+let selAngler = "all";
+let minLen = 0, maxLen = 80;
+
+let speciesChart, histChart, yoyChart;
+
+function filtered() {
+  return data.filter(d =>
+    selYears.has(String(d.year)) &&
+    selSpecies.has(d.species) &&
+    (selAngler === "all" || d.angler === selAngler) &&
+    d.length >= minLen && d.length <= maxLen
+  );
+}
+
+function buildPills(containerId, items, selSet, onChange) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = "";
+  const allPill = document.createElement("div");
+  allPill.className = "pill" + (selSet.size === items.length ? " active" : "");
+  allPill.textContent = "All";
+  allPill.onclick = () => {
+    if (selSet.size === items.length) { selSet.clear(); } else { items.forEach(i => selSet.add(String(i))); }
+    onChange();
+  };
+  c.appendChild(allPill);
+  items.forEach(item => {
+    const p = document.createElement("div");
+    p.className = "pill" + (selSet.has(String(item)) ? " active" : "");
+    p.textContent = item;
+    p.onclick = () => {
+      if (selSet.has(String(item))) selSet.delete(String(item)); else selSet.add(String(item));
+      onChange();
+    };
+    c.appendChild(p);
+  });
+}
+
+function buildAnglerSelect() {
+  const sel = document.getElementById("angler-select");
+  sel.innerHTML = '<option value="all">All anglers</option>';
+  anglers.forEach(a => {
+    const o = document.createElement("option");
+    o.value = a; o.textContent = a;
+    sel.appendChild(o);
+  });
+  sel.onchange = () => { selAngler = sel.value; render(); };
+}
+
+function renderMetrics(f) {
+  const total = f.length;
+  const biggest = f.length ? Math.max(...f.map(d => d.length)) : 0;
+  const avgLen = f.length ? (f.reduce((s, d) => s + d.length, 0) / f.length) : 0;
+  const uniqueAnglers = new Set(f.map(d => d.angler)).size;
+  document.getElementById("hdr-total").textContent = total;
+  const m = document.getElementById("metrics-row");
+  m.innerHTML = `
+    <div class="metric-card blue"><div class="metric-label">Total catches</div><div class="metric-value">${total}</div><div class="metric-sub">across all filters</div></div>
+    <div class="metric-card amber"><div class="metric-label">Biggest fish</div><div class="metric-value">${biggest} cm</div><div class="metric-sub">personal best</div></div>
+    <div class="metric-card green"><div class="metric-label">Avg length</div><div class="metric-value">${avgLen.toFixed(1)} cm</div><div class="metric-sub">filtered selection</div></div>
+    <div class="metric-card coral"><div class="metric-label">Anglers</div><div class="metric-value">${uniqueAnglers}</div><div class="metric-sub">unique fishers</div></div>
+  `;
+}
+
+function renderAnglerBars(f) {
+  const counts = {};
+  f.forEach(d => { counts[d.angler] = (counts[d.angler] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const max = sorted[0] ? sorted[0][1] : 1;
+  const speciesMap = {};
+  f.forEach(d => {
+    if (!speciesMap[d.angler]) speciesMap[d.angler] = {};
+    speciesMap[d.angler][d.species] = (speciesMap[d.angler][d.species] || 0) + 1;
+  });
+  const wrap = document.getElementById("angler-bars");
+  wrap.innerHTML = sorted.map(([name, cnt]) => {
+    const topSp = Object.entries(speciesMap[name] || {}).sort((a,b)=>b[1]-a[1])[0];
+    const col = topSp ? (SPECIES_COLORS[topSp[0]] || "#888") : "#888";
+    return `<div class="bar-h-row">
+      <div class="bar-h-label" title="${name}">${name}</div>
+      <div class="bar-h-track"><div class="bar-h-fill" style="width:${Math.round(cnt/max*100)}%; background:${col};"></div></div>
+      <div class="bar-h-val">${cnt}</div>
+    </div>`;
+  }).join("");
+  document.getElementById("by-angler-sub").textContent = `top ${sorted.length}`;
+}
+
+function renderSpeciesChart(f) {
+  const counts = {};
+  f.forEach(d => { counts[d.species] = (counts[d.species] || 0) + 1; });
+  const labels = Object.keys(counts);
+  const vals = labels.map(l => counts[l]);
+  const colors = labels.map(l => SPECIES_COLORS[l] || "#888");
+  const total = vals.reduce((a,b)=>a+b, 0);
+
+  document.getElementById("species-legend").innerHTML = labels.map((l, i) =>
+    `<div class="species-legend-item"><div class="swatch" style="background:${colors[i]}"></div>${l} (${Math.round(counts[l]/total*100)}%)</div>`
+  ).join("");
+  document.getElementById("species-sub").textContent = `${labels.length} species`;
+
+  if (speciesChart) speciesChart.destroy();
+  speciesChart = new Chart(document.getElementById("speciesChart"), {
+    type: "doughnut",
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 2, borderColor: "#fff" }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: "65%",
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/total*100)}%)` } } }
+    }
+  });
+}
+
+function renderHist(f) {
+  const bins = [];
+  const step = 5;
+  for (let i = 0; i <= 75; i += step) bins.push({ lo: i, hi: i + step, count: 0 });
+  f.forEach(d => {
+    const b = bins.find(b => d.length >= b.lo && d.length < b.hi);
+    if (b) b.count++;
+  });
+  const labels = bins.map(b => `${b.lo}–${b.hi}`);
+  const vals = bins.map(b => b.count);
+  document.getElementById("size-sub").textContent = `${minLen}–${maxLen} cm`;
+  if (histChart) histChart.destroy();
+  histChart = new Chart(document.getElementById("histChart"), {
+    type: "bar",
+    data: { labels, datasets: [{ label: "Fish", data: vals, backgroundColor: "#1a6b8a", borderRadius: 3, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10, family: "'DM Mono'" }, color: "#9ca3af", autoSkip: false, maxRotation: 45 } },
+        y: { grid: { color: "rgba(0,0,0,0.05)" }, ticks: { font: { size: 10 }, color: "#9ca3af", stepSize: 1 } }
+      }
+    }
+  });
+}
+
+function renderYoY() {
+  const counts = {};
+  years.forEach(y => counts[y] = 0);
+  data.filter(d => selSpecies.has(d.species) && (selAngler === "all" || d.angler === selAngler))
+    .forEach(d => { counts[d.year] = (counts[d.year] || 0) + 1; });
+  const cols = years.map(y => selYears.has(String(y)) ? "#1a6b8a" : "#b0cdd8");
+  if (yoyChart) yoyChart.destroy();
+  yoyChart = new Chart(document.getElementById("yoyChart"), {
+    type: "bar",
+    data: { labels: years, datasets: [{ label: "Catches", data: years.map(y => counts[y]), backgroundColor: cols, borderRadius: 4, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 12, family: "'DM Mono'" }, color: "#9ca3af" } },
+        y: { grid: { color: "rgba(0,0,0,0.05)" }, ticks: { font: { size: 11 }, color: "#9ca3af" } }
+      }
+    }
+  });
+}
+
+function renderLeaderboard(f) {
+  const best = {};
+  f.forEach(d => {
+    if (!best[d.angler] || d.length > best[d.angler].length) best[d.angler] = d;
+  });
+  const sorted = Object.entries(best).sort((a,b) => b[1].length - a[1].length).slice(0, 8);
+  document.getElementById("lb-sub").textContent = `top ${sorted.length} by single catch`;
+  const table = document.getElementById("leaderboard");
+  table.innerHTML = `<thead><tr><th>#</th><th>Angler</th><th>Species</th><th>Length</th><th>Year</th></tr></thead><tbody>` +
+    sorted.map(([angler, rec], i) => {
+      const rankClass = i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "rank-n";
+      const col = SPECIES_COLORS[rec.species] || "#888";
+      return `<tr>
+        <td><span class="rank-badge ${rankClass}">${i+1}</span></td>
+        <td style="font-weight:500">${angler}</td>
+        <td><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${col}22;color:${col};font-family:var(--font-mono)">${rec.species}</span></td>
+        <td style="font-family:var(--font-mono);font-weight:500;color:var(--water)">${rec.length} cm</td>
+        <td style="color:var(--muted);font-family:var(--font-mono)">${rec.year}</td>
+      </tr>`;
+    }).join("") + "</tbody>";
+}
+
+function render() {
+  buildPills("year-pills", years, selYears, render);
+  buildPills("species-pills", species, selSpecies, render);
+  const f = filtered();
+  renderMetrics(f);
+  renderAnglerBars(f);
+  renderSpeciesChart(f);
+  renderHist(f);
+  renderYoY();
+  renderLeaderboard(f);
+}
+
+buildAnglerSelect();
+
+const minSlider = document.getElementById("min-len");
+const maxSlider = document.getElementById("max-len");
+const minVal = document.getElementById("min-len-val");
+const maxVal = document.getElementById("max-len-val");
+minSlider.oninput = () => {
+  minLen = +minSlider.value;
+  if (minLen > maxLen) { maxLen = minLen; maxSlider.value = maxLen; }
+  minVal.textContent = minLen + " cm"; render();
+};
+maxSlider.oninput = () => {
+  maxLen = +maxSlider.value;
+  if (maxLen < minLen) { minLen = maxLen; minSlider.value = minLen; }
+  maxVal.textContent = maxLen + " cm"; render();
+};
+
+render();
+</script>
