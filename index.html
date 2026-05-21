@@ -271,15 +271,13 @@ function renderYoY() {
 }
 
 function renderLeaderboard(f) {
-  const best={};
-  f.forEach(d=>{if(!best[d.angler]||d.length>best[d.angler].length)best[d.angler]=d;});
-  const sorted=Object.entries(best).sort((a,b)=>b[1].length-a[1].length).slice(0,8);
-  document.getElementById("lb-sub").textContent="top "+sorted.length+" by single catch";
+  const sorted=[...f].sort((a,b)=>b.length-a.length).slice(0,15);
+  document.getElementById("lb-sub").textContent="top "+sorted.length+" catches all time";
   document.getElementById("leaderboard").innerHTML="<thead><tr><th>#</th><th>Angler</th><th>Species</th><th>Length</th><th>Year</th></tr></thead><tbody>"+
-    sorted.map(([angler,rec],i)=>{
+    sorted.map((rec,i)=>{
       const rc=i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"rank-n";
       const col=SPECIES_COLORS[rec.species]||"#888";
-      return '<tr><td><span class="rank-badge '+rc+'">'+(i+1)+'</span></td><td style="font-weight:500;color:var(--text)">'+angler+'</td><td><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+col+'22;color:'+col+';font-family:var(--font-mono)">'+rec.species+'</span></td><td style="font-family:var(--font-mono);font-weight:500;color:#1a6b8a">'+rec.length+' cm</td><td style="color:var(--muted);font-family:var(--font-mono)">'+rec.year+'</td></tr>';
+      return '<tr><td><span class="rank-badge '+rc+'">'+(i+1)+'</span></td><td style="font-weight:500;color:var(--text)">'+rec.angler+'</td><td><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+col+'22;color:'+col+';font-family:var(--font-mono)">'+rec.species+'</span></td><td style="font-family:var(--font-mono);font-weight:500;color:#1a6b8a">'+rec.length+' cm</td><td style="color:var(--muted);font-family:var(--font-mono)">'+rec.year+'</td></tr>';
     }).join("")+"</tbody>";
 }
 
